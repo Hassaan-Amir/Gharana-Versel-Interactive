@@ -8,37 +8,37 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
     .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input, select, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #007bff; color: white; cursor: pointer; }
+    input, select, button { padding: 12px; margin: 8px 0; width: 100%; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+    button { background: #007bff; color: white; cursor: pointer; font-weight: bold; }
     button:hover { background: #0056b3; }
-    .nav { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .nav { display: flex; justify-content: space-around; margin: 15px 0; }
     .nav button { flex: 1; margin: 5px; }
     .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
-    .income { color: green; }
-    .expense { color: red; }
-    .balance { font-size: 1.5em; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+    .income { color: green; font-weight: bold; }
+    .expense { color: red; font-weight: bold; }
+    .balance { font-size: 1.6em; font-weight: bold; color: #333; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Auth Section -->
+    <!-- Auth Screen -->
     <div id="auth-screen">
-      <h2>Login / Register</h2>
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button onclick="login()">Login</button>
-      <button onclick="register()">Register</button>
-      <p id="auth-message"></p>
+      <h2>Family Finance Tracker</h2>
+      <input type="email" id="email" placeholder="Enter Email" />
+      <input type="password" id="password" placeholder="Enter Password" />
+      <button id="login-btn">Login</button>
+      <button id="register-btn">Register</button>
+      <p id="auth-message" style="margin-top: 10px; font-weight: bold;"></p>
     </div>
 
     <!-- Main App -->
     <div id="app-screen" class="hidden">
       <div class="nav">
-        <button onclick="showSection('dashboard')">Dashboard</button>
-        <button onclick="showSection('add')">Add Transaction</button>
-        <button onclick="logout()">Logout</button>
+        <button id="dashboard-btn">Dashboard</button>
+        <button id="add-btn">Add Transaction</button>
+        <button id="logout-btn">Logout</button>
       </div>
 
       <!-- Dashboard -->
@@ -59,55 +59,68 @@
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
-        <input type="number" id="amount" placeholder="Amount" />
+        <input type="number" id="amount" placeholder="Amount in PKR" />
         <select id="category">
           <option value="Food">Food</option>
           <option value="Transport">Transport</option>
           <option value="Rent">Rent</option>
           <option value="Salary">Salary</option>
           <option value="Shopping">Shopping</option>
+          <option value="Bills">Bills</option>
           <option value="Other">Other</option>
         </select>
-        <button onclick="addTransaction()">Save Transaction</button>
-        <button onclick="startVoiceInput()">🎤 Voice Input</button>
+        <button id="save-btn">Save Transaction</button>
+        <button id="voice-btn">🎤 Voice Input</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ==================== SUPABASE CONFIG ====================
-    const supabaseUrl = 'https://hdoifmagxuvjwmwjxwbu.supabase.co';   // ← Change this
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkb2lmbWFneHV2andtd2p4d2J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDAyODEsImV4cCI6MjA5NTAxNjI4MX0.nYcIwU82_fr-09GRkdKo55Js5PJHciRc_3OQsuyUNWg';                 // ← Change this
+    // ==================== CONFIG ====================
+    const supabaseUrl = 'https://hdoifmagxuvjwmwjxwbu.supabase.co';   // ← Change
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkb2lmbWFneHV2andtd2p4d2J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDAyODEsImV4cCI6MjA5NTAxNjI4MX0.nYcIwU82_fr-09GRkdKo55Js5PJHciRc_3OQsuyUNWg'; // ← Change (Publishable key)
 
     const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let currentUser = null;
 
-    // ==================== AUTH FUNCTIONS ====================
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('app-screen').classList.remove('hidden');
-        document.getElementById('user-email').textContent = currentUser.email;
-        loadTransactions();
-      }
-    }
-
+    // ==================== AUTH ====================
     async function register() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const { error } = await supabase.auth.signUp({ email, password });
-      document.getElementById('auth-message').textContent = error ? error.message : "Check your email to confirm!";
+      const msg = document.getElementById('auth-message');
+
+      if (!email || !password) {
+        msg.style.color = "red";
+        msg.textContent = "Email and Password are required!";
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { emailRedirectTo: window.location.href }
+      });
+
+      if (error) {
+        msg.style.color = "red";
+        msg.textContent = error.message;
+      } else {
+        msg.style.color = "green";
+        msg.textContent = "Registration successful! Please check your email to confirm account.";
+      }
     }
 
     async function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const msg = document.getElementById('auth-message');
+
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
-        document.getElementById('auth-message').textContent = error.message;
+        msg.style.color = "red";
+        msg.textContent = error.message;
       } else {
         currentUser = data.user;
         document.getElementById('auth-screen').classList.add('hidden');
@@ -122,31 +135,33 @@
       location.reload();
     }
 
-    // ==================== TRANSACTION FUNCTIONS ====================
+    // ==================== TRANSACTIONS ====================
     async function addTransaction() {
       const description = document.getElementById('desc').value;
       const type = document.getElementById('type').value;
       const amount = parseFloat(document.getElementById('amount').value);
       const category = document.getElementById('category').value;
 
-      if (!description || !amount) return alert("Description and Amount are required!");
+      if (!description || !amount) {
+        alert("Description and Amount are required!");
+        return;
+      }
 
-      const { error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: currentUser.id,
-          description,
-          type,
-          amount: type === 'expense' ? -amount : amount,
-          category,
-          date: new Date().toISOString().split('T')[0]
-        });
+      const { error } = await supabase.from('transactions').insert({
+        user_id: currentUser.id,
+        description,
+        type,
+        amount: type === 'expense' ? -amount : amount,
+        category,
+        date: new Date().toISOString().split('T')[0]
+      });
 
       if (error) alert(error.message);
       else {
-        alert("Transaction added!");
+        alert("✅ Transaction Saved!");
         clearForm();
         loadTransactions();
+        showSection('dashboard');
       }
     }
 
@@ -159,20 +174,19 @@
 
       if (error) return console.error(error);
 
+      let balance = 0;
       const tbody = document.getElementById('transaction-list');
       tbody.innerHTML = '';
-      let balance = 0;
 
       data.forEach(t => {
         balance += t.amount;
-        const row = document.createElement('tr');
-        row.innerHTML = `
+        const row = `<tr>
           <td>${t.date}</td>
           <td>${t.description}</td>
           <td>${t.category}</td>
           <td class="${t.amount > 0 ? 'income' : 'expense'}">${t.amount > 0 ? '+' : ''}${t.amount} PKR</td>
-        `;
-        tbody.appendChild(row);
+        </tr>`;
+        tbody.innerHTML += row;
       });
 
       document.getElementById('balance').textContent = balance.toFixed(0);
@@ -188,31 +202,39 @@
       document.getElementById(section).classList.remove('hidden');
     }
 
-    // ==================== VOICE INPUT (Preserved) ====================
-    let recognition;
+    // Voice Input
     function startVoiceInput() {
-      if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        return alert("Voice input not supported in this browser.");
-      }
-
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
+      if (!SpeechRecognition) return alert("Voice not supported");
+
+      const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
-      recognition.interimResults = false;
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        document.getElementById('desc').value = transcript;
-        alert("Voice captured: " + transcript);
+      recognition.onresult = (e) => {
+        document.getElementById('desc').value = e.results[0][0].transcript;
       };
-
-      recognition.onerror = (e) => alert("Voice error: " + e.error);
       recognition.start();
     }
 
-    // Initialize
+    // Attach buttons
+    document.getElementById('register-btn').addEventListener('click', register);
+    document.getElementById('login-btn').addEventListener('click', login);
+    document.getElementById('save-btn').addEventListener('click', addTransaction);
+    document.getElementById('voice-btn').addEventListener('click', startVoiceInput);
+    document.getElementById('dashboard-btn').addEventListener('click', () => showSection('dashboard'));
+    document.getElementById('add-btn').addEventListener('click', () => showSection('add'));
+    document.getElementById('logout-btn').addEventListener('click', logout);
+
+    // Auto check login
     window.onload = () => {
-      checkAuth();
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          currentUser = data.session.user;
+          document.getElementById('auth-screen').classList.add('hidden');
+          document.getElementById('app-screen').classList.remove('hidden');
+          document.getElementById('user-email').textContent = currentUser.email;
+          loadTransactions();
+        }
+      });
     };
   </script>
 </body>

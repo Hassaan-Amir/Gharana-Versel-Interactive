@@ -41,7 +41,6 @@
         <button id="logout-btn">Logout</button>
       </div>
 
-      <!-- Dashboard -->
       <div id="dashboard" class="section">
         <h2>Welcome, <span id="user-email"></span></h2>
         <p class="balance">Total Balance: <span id="balance">0</span> PKR</p>
@@ -51,7 +50,6 @@
         </table>
       </div>
 
-      <!-- Add Transaction -->
       <div id="add" class="section hidden">
         <h2>Add New Transaction</h2>
         <input type="text" id="desc" placeholder="Description" />
@@ -76,15 +74,15 @@
   </div>
 
   <script>
-    // ==================== CONFIG ====================
-    const supabaseUrl = 'https://hdoifmagxuvjwmwjxwbu.supabase.co';   // ← Change
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkb2lmbWFneHV2andtd2p4d2J1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDAyODEsImV4cCI6MjA5NTAxNjI4MX0.nYcIwU82_fr-09GRkdKo55Js5PJHciRc_3OQsuyUNWg'; // ← Change (Publishable key)
+    // ==================== SUPABASE CONFIG ====================
+    const supabaseUrl = 'https://YOUR-PROJECT.supabase.co';     // ← CHANGE THIS
+    const supabaseAnonKey = 'sb_publishable_xxxxxxxxxxxxxxxx';  // ← CHANGE THIS (Publishable key)
 
     const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let currentUser = null;
 
-    // ==================== AUTH ====================
+    // ==================== AUTH FUNCTIONS ====================
     async function register() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
@@ -107,7 +105,7 @@
         msg.textContent = error.message;
       } else {
         msg.style.color = "green";
-        msg.textContent = "Registration successful! Please check your email to confirm account.";
+        msg.textContent = "Registration successful! Please check your email to confirm.";
       }
     }
 
@@ -142,8 +140,8 @@
       const amount = parseFloat(document.getElementById('amount').value);
       const category = document.getElementById('category').value;
 
-      if (!description || !amount) {
-        alert("Description and Amount are required!");
+      if (!description || isNaN(amount)) {
+        alert("Description and valid Amount are required!");
         return;
       }
 
@@ -205,8 +203,8 @@
     // Voice Input
     function startVoiceInput() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return alert("Voice not supported");
-
+      if (!SpeechRecognition) return alert("Voice input not supported in this browser");
+      
       const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
       recognition.onresult = (e) => {
@@ -215,7 +213,7 @@
       recognition.start();
     }
 
-    // Attach buttons
+    // Button Events
     document.getElementById('register-btn').addEventListener('click', register);
     document.getElementById('login-btn').addEventListener('click', login);
     document.getElementById('save-btn').addEventListener('click', addTransaction);
@@ -224,7 +222,7 @@
     document.getElementById('add-btn').addEventListener('click', () => showSection('add'));
     document.getElementById('logout-btn').addEventListener('click', logout);
 
-    // Auto check login
+    // Initialize
     window.onload = () => {
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
